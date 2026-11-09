@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="id" data-bs-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Life OS — Personal Command Center</title>
+
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Chart.js (defer: tidak blocking render awal) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+  <!-- Custom Styles -->
+  <link href="style.css" rel="stylesheet">
+</head>
+<body>
+
+<div class="d-flex flex-column flex-md-row">
+  <!-- SIDEBAR -->
+  <aside class="sidebar p-3 d-flex flex-column flex-shrink-0" style="width: 280px;">
+    <div class="d-flex align-items-center mb-4 text-white text-decoration-none">
+      <div class="brand-mark me-3">
+        <i class="fa-solid fa-cubes fa-lg"></i>
+      </div>
+      <div>
+        <h5 class="mb-0 fw-bold">Life OS</h5>
+        <small class="text-secondary">Personal Command Center</small>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <ul class="nav nav-pills flex-column mb-auto" id="pills-tab" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active w-100 text-start" data-bs-toggle="pill" data-bs-target="#tab-dashboard" type="button">
+          <i class="fa-solid fa-chart-pie me-2"></i> Dashboard
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link w-100 text-start" data-bs-toggle="pill" data-bs-target="#tab-inventory" type="button">
+          <i class="fa-solid fa-boxes-stacked me-2"></i> Aset & Inventaris
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link w-100 text-start" data-bs-toggle="pill" data-bs-target="#tab-finance" type="button">
+          <i class="fa-solid fa-wallet me-2"></i> Keuangan
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link w-100 text-start" data-bs-toggle="pill" data-bs-target="#tab-tasks" type="button">
+          <i class="fa-solid fa-list-check me-2"></i> Tugas & Proyek
+        </button>
+      </li>
+      <li class="nav-item" role="presentation"><button class="nav-link w-100 text-start" data-bs-toggle="pill" data-bs-target="#tab-routines" type="button"><i class="fa-solid fa-repeat me-2"></i> Rutinitas</button></li>
+      <li class="nav-item" role="presentation"><button class="nav-link w-100 text-start" data-bs-toggle="pill" data-bs-target="#tab-goals" type="button"><i class="fa-solid fa-bullseye me-2"></i> Target</button></li>
+      <li class="nav-item" role="presentation"><button class="nav-link w-100 text-start" data-bs-toggle="pill" data-bs-target="#tab-notes" type="button"><i class="fa-solid fa-note-sticky me-2"></i> Catatan</button></li>
+    </ul>
+
+    <!-- Sync Section -->
+    <div class="mt-4 pt-3 border-top border-secondary">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <small>Google Sheets</small>
+        <span id="sync-status-badge" class="badge text-bg-success">Terhubung</span>
+      </div>
+      <button onclick="syncData()" id="sync-btn" class="btn btn-primary btn-sm w-100 mb-2">
+        <i class="fa-solid fa-rotate me-1"></i> Sinkronkan Data
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="flex-grow-1 p-4">
+
+    <!-- TOPBAR -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="fw-bold mb-0" id="greeting-text">Halo!</h2>
+        <p class="text-secondary mb-0" id="greeting-date"></p>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <div class="badge text-bg-secondary p-2">
+          <i class="fa-regular fa-clock me-1"></i> Update: <span id="last-updated-time">Belum pernah</span>
+        </div>
+        <div class="notif-bell" id="notif-bell" onclick="toggleNotifPanel()">
+          <i class="fa-regular fa-bell"></i>
+          <span class="notif-badge" id="notif-badge">0</span>
+          <div class="notif-panel" id="notif-panel">
+            <div class="notif-panel-header">Notifikasi</div>
+            <div id="notif-list"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="pills-tabContent">
+
+      <!-- 1. TAB DASHBOARD -->
+      <div class="tab-pane fade show active" id="tab-dashboard" role="tabpanel">
+
+        <div class="row g-3 mb-4">
+          <div class="col-md-3">
+            <div class="card stat-card h-100">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                  <h6 class="card-subtitle mb-0 text-secondary">Estimasi Total Aset</h6>
+                  <div class="stat-icon accent"><i class="fa-solid fa-boxes-stacked"></i></div>
+                </div>
+                <h3 class="card-title fw-bold mb-1" id="dash-total-asset-val">Rp 0</h3>
+                <small class="text-secondary" id="dash-total-asset-count">0 barang</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card stat-card h-100">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                  <h6 class="card-subtitle mb-0 text-secondary">Pemasukan</h6>
+                  <div class="stat-icon success"><i class="fa-solid fa-arrow-trend-up"></i></div>
+                </div>
+                <h3 class="card-title fw-bold mb-1 text-success" id="dash-total-income">Rp 0</h3>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card stat-card h-100">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                  <h6 class="card-subtitle mb-0 text-secondary">Pengeluaran</h6>
+                  <div class="stat-icon danger"><i class="fa-solid fa-arrow-trend-down"></i></div>
+                </div>
+                <h3 class="card-title fw-bold mb-1 text-danger" id="dash-total-expense">Rp 0</h3>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card stat-card h-100">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                  <h6 class="card-subtitle mb-0 text-secondary">Tugas Pending</h6>
+                  <div class="stat-icon warning"><i class="fa-solid fa-list-check"></i></div>
+                </div>
+                <h3 class="card-title fw-bold mb-1 text-warning" id="dash-pending-tasks">0</h3>
+                <small class="text-secondary" id="dash-completed-tasks">0 tugas selesai</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- LIFE OS TODAY -->
+        <div class="row g-3 mb-3">
+          <div class="col-lg-8">
+            <div class="card life-today-card h-100">
+              <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-start gap-3">
+                  <div>
+                    <div class="small text-uppercase text-secondary fw-semibold mb-1">Life OS · Hari ini</div>
+                    <h4 class="fw-bold mb-1" id="life-today-title">Apa yang paling penting hari ini?</h4>
+                    <p class="text-secondary mb-3" id="life-today-subtitle">Pilih satu fokus utama agar hari tidak terasa penuh tapi tidak selesai.</p>
+                  </div>
+                  <div class="life-score-badge">
+                    <span class="small text-secondary">Skor</span>
+                    <strong id="life-score">0%</strong>
+                  </div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2"><div class="small text-uppercase text-secondary fw-semibold">Arah hari ini</div><button class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#focusModal" onclick="openFocusEditor()"><i class="fa-solid fa-pen me-1"></i> Atur Fokus</button></div><div id="life-focus-card" class="focus-card mb-3"></div>
+                <div class="row g-2">
+                  <div class="col-sm-4"><div class="mini-progress"><div class="d-flex justify-content-between small mb-1"><span>Tugas</span><strong id="life-task-progress">0%</strong></div><div class="progress"><div class="progress-bar" id="life-task-bar"></div></div></div></div>
+                  <div class="col-sm-4"><div class="mini-progress"><div class="d-flex justify-content-between small mb-1"><span>Rutinitas</span><strong id="life-routine-progress">0%</strong></div><div class="progress"><div class="progress-bar" id="life-routine-bar"></div></div></div></div>
+                  <div class="col-sm-4"><div class="mini-progress"><div class="d-flex justify-content-between small mb-1"><span>Target</span><strong id="life-goal-progress">0%</strong></div><div class="progress"><div class="progress-bar" id="life-goal-bar"></div></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-4">
+            <div class="card h-100">
+              <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <div><div class="small text-uppercase text-secondary fw-semibold">Checklist</div><h5 class="fw-bold mb-0">Rutinitas hari ini</h5></div>
+                  <button class="btn btn-sm btn-outline-light" onclick="goToTab('tab-routines')">Lihat semua</button>
+                </div>
+                <div id="dashboard-routine-list" class="dashboard-checklist"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-lg-7">
+            <div class="card h-100">
+              <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <div><div class="small text-uppercase text-secondary fw-semibold">Prioritas</div><h5 class="fw-bold mb-0">Yang perlu kamu kerjakan</h5></div>
+                  <button class="btn btn-sm btn-primary" onclick="goToTab('tab-tasks')"><i class="fa-solid fa-list-check me-1"></i> Buka tugas</button>
+                </div>
+                <div id="dashboard-task-list" class="dashboard-task-list"></div>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-5">
+            <div class="card h-100">
+              <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <div><div class="small text-uppercase text-secondary fw-semibold">Arah</div><h5 class="fw-bold mb-0">Progress target</h5></div>
+                  <button class="btn btn-sm btn-outline-light" onclick="goToTab('tab-goals')">Target</button>
+                </div>
+                <div id="dashboard-goal-list" class="dashboard-goal-list"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row g-3">
+          <div class="col-md-8">
+            <div class="card">
+              <div class="card-body">
+                <h6 class="card-title">Grafik Arus Kas</h6>
+                <div class="chart-wrap">
+                  <canvas id="financeChart"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card">
+              <div class="card-body">
+                <h6 class="card-title">Sebaran Nilai Aset</h6>
+                <div class="chart-wrap">
+                  <canvas id="assetChart"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. TAB INVENTARIS -->
+      <div class="tab-pane fade" id="tab-inventory" role="tabpanel">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+          <div><div class="small text-uppercase text-secondary fw-semibold mb-1">Manajemen Aset</div>
+            <h2 class="fw-bold mb-1">Aset & Inventaris</h2><p class="text-secondary mb-0">Kelola aset, lokasi, kondisi, status, dan nilai inventaris.</p></div>
+          <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#inventoryModal" onclick="prepareNewInventory()"><i class="fa-solid fa-plus me-1"></i> Tambah Aset</button>
+        </div>
+        <div class="row g-3 mb-4">
+          <div class="col-sm-6 col-xl-3"><div class="card stat-card h-100"><div class="card-body"><div class="d-flex justify-content-between align-items-start"><div><div class="small text-secondary mb-1">Total Aset</div><h3 class="fw-bold mb-0" id="inv-dash-count">0</h3></div><div class="stat-icon accent"><i class="fa-solid fa-boxes-stacked"></i></div></div></div></div></div>
+          <div class="col-sm-6 col-xl-3"><div class="card stat-card h-100"><div class="card-body"><div class="d-flex justify-content-between align-items-start"><div><div class="small text-secondary mb-1">Total Unit</div><h3 class="fw-bold mb-0" id="inv-dash-qty">0</h3></div><div class="stat-icon success"><i class="fa-solid fa-layer-group"></i></div></div></div></div></div>
+          <div class="col-sm-6 col-xl-3"><div class="card stat-card h-100"><div class="card-body"><div class="d-flex justify-content-between align-items-start"><div><div class="small text-secondary mb-1">Nilai Aset</div><h3 class="fw-bold mb-0" id="inv-dash-value">Rp 0</h3></div><div class="stat-icon warning"><i class="fa-solid fa-money-bill-wave"></i></div></div></div></div></div>
+          <div class="col-sm-6 col-xl-3"><div class="card stat-card h-100"><div class="card-body"><div class="d-flex justify-content-between align-items-start"><div><div class="small text-secondary mb-1">Perlu Perhatian</div><h3 class="fw-bold mb-0" id="inv-dash-attention">0</h3><small class="text-secondary">Rusak / Maintenance / Hilang</small></div><div class="stat-icon danger"><i class="fa-solid fa-triangle-exclamation"></i></div></div></div></div></div>
+        </div>
+        <div class="card mb-3"><div class="card-body"><div class="row g-2">
+          <div class="col-lg-4"><div class="input-group"><span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span><input type="search" id="inventory-search" class="form-control" placeholder="Cari nama aset, ID, atau catatan..." oninput="renderInventory()"></div></div>
+          <div class="col-sm-6 col-lg-2"><select id="inventory-filter-category" class="form-select" onchange="renderInventory()"><option value="">Semua Kategori</option></select></div>
+          <div class="col-sm-6 col-lg-2"><select id="inventory-filter-location" class="form-select" onchange="renderInventory()"><option value="">Semua Lokasi</option></select></div>
+          <div class="col-sm-6 col-lg-2"><select id="inventory-filter-condition" class="form-select" onchange="renderInventory()"><option value="">Semua Kondisi</option><option>Baik</option><option>Rusak Ringan</option><option>Rusak Berat</option></select></div>
+          <div class="col-sm-6 col-lg-2"><select id="inventory-filter-status" class="form-select" onchange="renderInventory()"><option value="">Semua Status</option><option>Tersedia</option><option>Digunakan</option><option>Dipinjam</option><option>Maintenance</option></select></div>
+        </div></div></div>
+        <div class="card"><div class="card-header bg-transparent border-bottom d-flex justify-content-between align-items-center py-3"><div><strong>Daftar Aset</strong><div class="small text-secondary" id="inventory-result-count">0 aset ditampilkan</div></div><button class="btn btn-sm btn-outline-secondary" onclick="resetInventoryFilters()"><i class="fa-solid fa-filter-circle-xmark me-1"></i>Reset Filter</button></div>
+          <div class="card-body p-0"><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr>
+            <th>Nama Aset</th><th>Kategori</th><th>Lokasi</th><th>Jumlah</th><th>Harga Satuan</th><th>Total Nilai</th><th>Kondisi</th><th>Status</th><th>Aksi</th>
+          </tr></thead><tbody id="inventory-table-body"></tbody></table></div></div>
+        </div>
+      </div>
+
+      <!-- 3. TAB KEUANGAN -->
+      <div class="tab-pane fade" id="tab-finance" role="tabpanel">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+          <div><div class="small text-uppercase text-secondary fw-semibold mb-1">Personal Finance</div>
+            <h2 class="fw-bold mb-1">Keuangan Pribadi</h2><p class="text-secondary mb-0">Catat pemasukan, pengeluaran, dan pantau arus kas pribadi.</p></div>
+          <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#financeModal" onclick="prepareNewFinance()"><i class="fa-solid fa-plus me-1"></i> Tambah Transaksi</button>
+        </div>
+
+        <div class="row g-3 mb-4">
+          <div class="col-sm-6 col-xl-3"><div class="card stat-card h-100"><div class="card-body"><div class="d-flex justify-content-between align-items-start"><div><div class="small text-secondary mb-1">Saldo</div><h3 class="fw-bold mb-0" id="fin-dash-balance">Rp 0</h3></div><div class="stat-icon accent"><i class="fa-solid fa-wallet"></i></div></div></div></div></div>
+          <div class="col-sm-6 col-xl-3"><div class="card stat-card h-100"><div class="card-body"><div class="d-flex justify-content-between align-items-start"><div><div class="small text-secondary mb-1">Pemasukan</div><h3 class="fw-bold mb-0 text-success" id="fin-dash-income">Rp 0</h3></div><div class="stat-icon success"><i class="fa-solid fa-arrow-down-to-bracket"></i></div></div></div></div></div>
+          <div class="col-sm-6 col-xl-3"><div class="card stat-card h-100"><div class="card-body"><div class="d-flex justify-content-between align-items-start"><div><div class="small text-secondary mb-1">Pengeluaran</div><h3 class="fw-bold mb-0 text-danger" id="fin-dash-expense">Rp 0</h3></div><div class="stat-icon danger"><i class="fa-solid fa-arrow-up-from-bracket"></i></div></div></div></div></div>
+          <div class="col-sm-6 col-xl-3"><div class="card stat-card h-100"><div class="card-body"><div class="d-flex justify-content-between align-items-start"><div><div class="small text-secondary mb-1">Transaksi</div><h3 class="fw-bold mb-0" id="fin-dash-count">0</h3></div><div class="stat-icon warning"><i class="fa-solid fa-receipt"></i></div></div></div></div></div>
+        </div>
+
+        <div class="row g-3 mb-4">
+          <div class="col-lg-8"><div class="card h-100"><div class="card-body"><div class="d-flex justify-content-between align-items-center mb-3"><div><strong>Ringkasan Arus Kas</strong><div class="small text-secondary">12 bulan terakhir berdasarkan transaksi yang tersimpan.</div></div></div><div class="chart-wrap"><canvas id="financeModuleChart"></canvas></div></div></div></div>
+          <div class="col-lg-4"><div class="card h-100"><div class="card-body"><strong>Pengeluaran per Kategori</strong><div class="small text-secondary mb-3">Kategori dengan pengeluaran terbesar.</div><div class="chart-wrap"><canvas id="financeCategoryChart"></canvas></div></div></div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header bg-transparent border-bottom py-3">
+            <div class="row g-2 align-items-center">
+              <div class="col-lg-4"><div class="input-group"><span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span><input type="search" id="finance-search" class="form-control" placeholder="Cari keterangan, kategori, rekening..." oninput="renderFinance()"></div></div>
+              <div class="col-sm-6 col-lg-2"><select id="finance-filter-type" class="form-select" onchange="renderFinance()"><option value="">Semua Tipe</option><option value="income">Pemasukan</option><option value="expense">Pengeluaran</option></select></div>
+              <div class="col-sm-6 col-lg-2"><select id="finance-filter-category" class="form-select" onchange="renderFinance()"><option value="">Semua Kategori</option></select></div>
+              <div class="col-sm-6 col-lg-2"><input type="month" id="finance-filter-month" class="form-control" onchange="renderFinance()"></div>
+              <div class="col-sm-6 col-lg-2"><button class="btn btn-outline-secondary w-100" onclick="resetFinanceFilters()"><i class="fa-solid fa-filter-circle-xmark me-1"></i>Reset</button></div>
+            </div>
+          </div>
+          <div class="card-body p-0"><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr><th>Tanggal</th><th>Keterangan</th><th>Kategori</th><th>Tipe</th><th>Jumlah</th><th>Catatan</th><th>Aksi</th></tr></thead><tbody id="finance-table-body"></tbody></table></div></div>
+          <div class="card-footer bg-transparent border-top"><div class="small text-secondary" id="finance-result-count">0 transaksi ditampilkan</div></div>
+        </div>
+      </div>
+
+      <!-- 4. TUGAS & PROYEK — ADVANCED WORKSPACE -->
+      <div class="tab-pane fade" id="tab-tasks" role="tabpanel">
+        <div class="life-page-heading d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4"><div><div class="eyebrow">PERSONAL COMMAND CENTER</div><h2 class="fw-bold mb-1">Tugas & Proyek</h2><p class="text-secondary mb-0">Rencanakan pekerjaan, jaga momentum, dan ukur hasil.</p></div><div class="d-flex gap-2"><button class="btn btn-outline-light" onclick="openNewProject()"><i class="fa-solid fa-folder-plus me-1"></i> Proyek Baru</button><button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#taskModal" onclick="prepareNewTask()"><i class="fa-solid fa-plus me-1"></i> Tugas Baru</button></div></div>
+        <div class="row g-3 mb-4">
+          <div class="col-6 col-xl-3"><div class="card stat-card h-100"><div class="card-body"><div class="d-flex justify-content-between"><span class="small text-secondary">Total Tugas</span><span class="stat-icon accent"><i class="fa-solid fa-list-check"></i></span></div><h3 id="task-dash-total" class="fw-bold mb-0 mt-2">0</h3><small class="text-secondary">Seluruh pekerjaan</small></div></div></div>
+          <div class="col-6 col-xl-3"><div class="card stat-card h-100"><div class="card-body"><div class="d-flex justify-content-between"><span class="small text-secondary">Dalam Proses</span><span class="stat-icon warning"><i class="fa-solid fa-spinner"></i></span></div><h3 id="task-dash-todo" class="fw-bold mb-0 mt-2">0</h3><small class="text-secondary">Belum selesai</small></div></div></div>
+          <div class="col-6 col-xl-3"><div class="card stat-card h-100"><div class="card-body"><div class="d-flex justify-content-between"><span class="small text-secondary">Tuntas</span><span class="stat-icon success"><i class="fa-solid fa-check"></i></span></div><h3 id="task-dash-done" class="fw-bold mb-0 mt-2">0</h3><small class="text-secondary">Pekerjaan selesai</small></div></div></div>
+          <div class="col-6 col-xl-3"><div class="card stat-card h-100"><div class="card-body"><div class="d-flex justify-content-between"><span class="small text-secondary">Terlambat</span><span class="stat-icon danger"><i class="fa-solid fa-triangle-exclamation"></i></span></div><h3 id="task-dash-overdue" class="fw-bold mb-0 mt-2">0</h3><small class="text-secondary">Perlu perhatian</small></div></div></div>
+        </div>
+        <div class="card mb-3 task-toolbar"><div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3"><div class="btn-group"><button class="btn btn-sm btn-primary" id="task-view-board" onclick="switchTaskView('board')"><i class="fa-solid fa-table-columns me-1"></i> Papan Tugas</button><button class="btn btn-sm btn-outline-light" id="task-view-projects" onclick="switchTaskView('projects')"><i class="fa-solid fa-folder-open me-1"></i> Proyek <span id="project-count" class="badge text-bg-secondary ms-1">0</span></button></div><div class="small text-secondary">Kelola pekerjaan dan pantau progres proyek dari satu tempat.</div></div></div>
+        <section id="task-board-view"><div class="card mb-3"><div class="card-body"><div class="row g-2"><div class="col-lg-5"><div class="input-group"><span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span><input type="search" id="task-search" class="form-control" placeholder="Cari judul, proyek, kategori, atau catatan..." oninput="renderTasks()"></div></div><div class="col-sm-6 col-lg-2"><select id="task-filter-status" class="form-select" onchange="renderTasks()"><option value="">Semua Status</option><option value="todo">Belum Dikerjakan</option><option value="in-progress">Sedang Dikerjakan</option><option value="done">Selesai</option></select></div><div class="col-sm-6 col-lg-2"><select id="task-filter-priority" class="form-select" onchange="renderTasks()"><option value="">Semua Prioritas</option><option value="tinggi">Tinggi</option><option value="sedang">Sedang</option><option value="rendah">Rendah</option></select></div><div class="col-sm-6 col-lg-2"><select id="task-filter-category" class="form-select" onchange="renderTasks()"><option value="">Semua Kategori</option></select></div><div class="col-sm-6 col-lg-1"><button class="btn btn-outline-secondary w-100" onclick="resetTaskFilters()"><i class="fa-solid fa-rotate-left"></i></button></div></div></div></div>
+          <div class="row g-3 task-kanban"><div class="col-lg-4"><div class="kanban-col"><h6 class="mb-3 d-flex justify-content-between"><span>Belum Dikerjakan</span><span class="badge text-bg-secondary" id="count-todo">0</span></h6><div id="kanban-todo"></div></div></div><div class="col-lg-4"><div class="kanban-col"><h6 class="mb-3 d-flex justify-content-between text-warning"><span>Sedang Dikerjakan</span><span class="badge text-bg-warning" id="count-in-progress">0</span></h6><div id="kanban-in-progress"></div></div></div><div class="col-lg-4"><div class="kanban-col"><h6 class="mb-3 d-flex justify-content-between text-success"><span>Selesai</span><span class="badge text-bg-success" id="count-done">0</span></h6><div id="kanban-done"></div></div></div></div>
+        </section>
+        <section id="task-projects-view" class="d-none"><div class="row g-2 mb-3"><div class="col-md-4"><select id="project-filter-status" class="form-select" onchange="renderProjects()"><option value="">Semua status proyek</option><option value="todo">Belum dimulai</option><option value="in-progress">Berjalan</option><option value="done">Selesai</option></select></div><div class="col-md-8"><input id="project-search" class="form-control" placeholder="Cari proyek..." oninput="renderProjects()"></div></div><div class="row g-3" id="project-list"></div></section>
+      </div>
+
+      <!-- 5. RUTINITAS -->
+      <div class="tab-pane fade" id="tab-routines" role="tabpanel">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4"><div><div class="small text-uppercase text-secondary fw-semibold mb-1">Kebiasaan Harian</div><h2 class="fw-bold mb-1">Rutinitas</h2><p class="text-secondary mb-0">Bangun kebiasaan kecil yang konsisten setiap hari.</p></div><button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#routineModal" onclick="prepareNewRoutine()"><i class="fa-solid fa-plus me-1"></i> Rutinitas Baru</button></div>
+        <div class="row g-3 mb-4"><div class="col-sm-6 col-xl-3"><div class="card stat-card h-100"><div class="card-body"><div class="small text-secondary">Hari ini selesai</div><h3 class="fw-bold mb-0" id="routine-done">0/0</h3></div></div></div><div class="col-sm-6 col-xl-3"><div class="card stat-card h-100"><div class="card-body"><div class="small text-secondary">Streak terbaik</div><h3 class="fw-bold mb-0" id="routine-streak">0 hari</h3></div></div></div><div class="col-sm-6 col-xl-3"><div class="card stat-card h-100"><div class="card-body"><div class="small text-secondary">Aktif</div><h3 class="fw-bold mb-0" id="routine-active">0</h3></div></div></div><div class="col-sm-6 col-xl-3"><div class="card stat-card h-100"><div class="card-body"><div class="small text-secondary">Progress hari ini</div><h3 class="fw-bold mb-0" id="routine-progress">0%</h3></div></div></div></div>
+        <div class="row g-3" id="routine-list"></div>
+      </div>
+
+      <!-- 6. TARGET -->
+      <div class="tab-pane fade" id="tab-goals" role="tabpanel">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4"><div><div class="small text-uppercase text-secondary fw-semibold mb-1">Arah Hidup</div><h2 class="fw-bold mb-1">Target</h2><p class="text-secondary mb-0">Ubah keinginan menjadi target yang bisa diukur.</p></div><button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#goalModal" onclick="prepareNewGoal()"><i class="fa-solid fa-plus me-1"></i> Target Baru</button></div>
+        <div class="row g-3" id="goal-list"></div>
+      </div>
+
+      <!-- 7. CATATAN -->
+      <div class="tab-pane fade" id="tab-notes" role="tabpanel">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4"><div><div class="small text-uppercase text-secondary fw-semibold mb-1">Personal Knowledge</div><h2 class="fw-bold mb-1">Catatan</h2><p class="text-secondary mb-0">Simpan ide, jurnal, rencana, dan hal penting.</p></div><button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#noteModal" onclick="prepareNewNote()"><i class="fa-solid fa-plus me-1"></i> Catatan Baru</button></div>
+        <div class="card mb-3"><div class="card-body"><div class="input-group"><span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span><input class="form-control" id="note-search" placeholder="Cari catatan..." oninput="renderNotes()"></div></div></div>
+        <div class="row g-3" id="note-list"></div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- Modal Catatan -->
+<div class="modal fade" id="noteModal" tabindex="-1">
+  <div class="modal-dialog modal-lg"><div class="modal-content text-bg-dark">
+    <form id="note-form" onsubmit="saveNote(event)">
+      <input type="hidden" id="note-id">
+      <div class="modal-header"><div><h5 class="modal-title">Catatan Baru</h5><small class="text-secondary">Tulis ide, jurnal, rencana, atau apa pun yang ingin kamu simpan.</small></div><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body"><div class="row g-3">
+        <div class="col-md-8"><label class="form-label">Judul <span class="text-danger">*</span></label><input type="text" id="note-title" class="form-control" maxlength="150" placeholder="Contoh: Ide untuk minggu depan" required></div>
+        <div class="col-md-4"><label class="form-label">Kategori</label><select id="note-category" class="form-select"><option>Jurnal</option><option>Ide</option><option>Penting</option><option>Belajar</option><option>Kerja</option><option>Pribadi</option><option>Lainnya</option></select></div>
+        <div class="col-12"><label class="form-label">Isi Catatan <span class="text-danger">*</span></label><textarea id="note-content" class="form-control" rows="10" maxlength="10000" placeholder="Tulis catatanmu di sini..." required></textarea><div class="form-text text-secondary">Catatan disimpan ke Google Sheet melalui API Life OS.</div></div>
+      </div></div>
+      <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button><button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk me-1"></i>Simpan Catatan</button></div>
+    </form>
+  </div></div>
+</div>
+
+<!-- TOAST STACK -->
+<div class="toast-stack" id="toast-stack"></div>
+
+<!-- ================================= MODALS (BOOTSTRAP) ================================= -->
+
+<!-- Modal Inventory -->
+<div class="modal fade" id="inventoryModal" tabindex="-1">
+  <div class="modal-dialog modal-lg"><div class="modal-content text-bg-dark">
+    <form id="inventory-form" onsubmit="saveInventoryItem(event)">
+      <div class="modal-header"><div><h5 class="modal-title mb-1">Tambah Aset</h5><small class="text-secondary">Lengkapi informasi aset dan inventaris.</small></div><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body"><div class="row g-3">
+        <div class="col-md-7"><label class="form-label">Nama Aset / Barang <span class="text-danger">*</span></label><input type="text" id="inv-name" class="form-control" placeholder="Contoh: Laptop Lenovo ThinkPad" required></div>
+        <div class="col-md-5"><label class="form-label">Kategori</label><select id="inv-category" class="form-select"><option>Elektronik</option><option>Peralatan Kantor</option><option>Kendaraan</option><option>Peralatan Kerja</option><option>Furniture</option><option>Dokumen/Buku</option><option>Lainnya</option></select></div>
+        <div class="col-md-6"><label class="form-label">Lokasi</label><input type="text" id="inv-location" class="form-control" list="inventory-location-list" placeholder="Contoh: Kantor Semarang"><datalist id="inventory-location-list"></datalist></div>
+        <div class="col-md-3"><label class="form-label">Jumlah</label><input type="number" id="inv-qty" class="form-control" value="1" min="0" step="1" required oninput="updateInventoryTotalPreview()"></div>
+        <div class="col-md-3"><label class="form-label">Harga Satuan (Rp)</label><input type="number" id="inv-value" class="form-control" value="0" min="0" step="1000" required oninput="updateInventoryTotalPreview()"></div>
+        <div class="col-12"><div class="p-3 rounded border border-secondary bg-black bg-opacity-25 d-flex justify-content-between align-items-center"><span class="text-secondary">Total nilai aset</span><strong class="fs-5" id="inv-total-preview">Rp 0</strong></div></div>
+        <div class="col-md-6"><label class="form-label">Kondisi</label><select id="inv-condition" class="form-select"><option>Baik</option><option>Rusak Ringan</option><option>Rusak Berat</option></select></div>
+        <div class="col-md-6"><label class="form-label">Status</label><select id="inv-status" class="form-select"><option>Tersedia</option><option>Digunakan</option><option>Dipinjam</option><option>Maintenance</option></select></div>
+        <div class="col-12"><label class="form-label">Catatan</label><textarea id="inv-notes" class="form-control" rows="2" placeholder="Nomor seri, penanggung jawab, keterangan tambahan, dll."></textarea></div>
+      </div></div>
+      <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button><button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk me-1"></i>Simpan Aset</button></div>
+    </form>
+  </div></div>
+</div>
+
+
+<!-- Modal Finance -->
+<div class="modal fade" id="financeModal" tabindex="-1">
+  <div class="modal-dialog modal-lg"><div class="modal-content text-bg-dark">
+    <form id="finance-form" onsubmit="saveFinanceItem(event)">
+      <div class="modal-header"><div><h5 class="modal-title mb-1">Tambah Transaksi</h5><small class="text-secondary">Simpan pemasukan atau pengeluaran pribadi.</small></div><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body"><div class="row g-3">
+        <div class="col-md-4"><label class="form-label">Tipe Transaksi</label><select id="fin-type" class="form-select" required><option value="expense">Pengeluaran (-)</option><option value="income">Pemasukan (+)</option></select></div>
+        <div class="col-md-4"><label class="form-label">Tanggal</label><input type="date" id="fin-date" class="form-control" required></div>
+        <div class="col-md-4"><label class="form-label">Jumlah (Rp)</label><input type="number" id="fin-amount" class="form-control" min="1" step="1" required></div>
+        <div class="col-md-7"><label class="form-label">Keterangan</label><input type="text" id="fin-description" class="form-control" placeholder="Contoh: Gaji September / Beli bensin" required></div>
+        <div class="col-md-5"><label class="form-label">Kategori</label><select id="fin-category" class="form-select" required><option value="">Pilih kategori</option><option>Gaji</option><option>Usaha</option><option>Makan</option><option>Transportasi</option><option>Tagihan</option><option>Cicilan</option><option>Belanja</option><option>Rumah Tangga</option><option>Kesehatan</option><option>Pendidikan</option><option>Hiburan</option><option>Tabungan</option><option>Investasi</option><option>Lainnya</option></select></div>
+        <div class="col-12"><label class="form-label">Catatan</label><textarea id="fin-notes" class="form-control" rows="2" placeholder="Keterangan tambahan (opsional)"></textarea></div>
+      </div></div>
+      <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button><button type="submit" class="btn btn-success"><i class="fa-solid fa-floppy-disk me-1"></i>Simpan Transaksi</button></div>
+    </form>
+  </div></div>
+</div>
+
+<!-- Modal Tasks -->
+<div class="modal fade" id="taskModal" tabindex="-1">
+  <div class="modal-dialog modal-lg"><div class="modal-content text-bg-dark">
+    <form id="task-form" onsubmit="saveTaskItem(event)">
+      <div class="modal-header"><div><h5 class="modal-title mb-1">Tambah Tugas</h5><small class="text-secondary">Catat pekerjaan dan pantau progresnya.</small></div><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body"><div class="row g-3">
+        <div class="col-md-8"><label class="form-label">Judul Tugas <span class="text-danger">*</span></label><input type="text" id="task-title" class="form-control" maxlength="180" placeholder="Contoh: Selesaikan laporan mingguan" required></div>
+        <div class="col-md-4"><label class="form-label">Kategori</label><select id="task-category" class="form-select"><option>Pribadi</option><option>Pekerjaan</option><option>Rumah</option><option>Keuangan</option><option>Belajar</option><option>Usaha</option><option>Kesehatan</option><option>Lainnya</option></select></div>
+        <div class="col-md-4" id="task-priority-wrap"><label class="form-label">Prioritas</label><select id="task-priority" class="form-select"><option value="rendah">Rendah</option><option value="sedang" selected>Sedang</option><option value="tinggi">Tinggi</option></select></div>
+        <div class="col-md-4"><label class="form-label">Batas Waktu</label><input type="date" id="task-due" class="form-control"></div>
+        <div class="col-md-6" id="task-project-wrap"><label class="form-label">Proyek terkait</label><select id="task-project" class="form-select"><option value="">Tugas mandiri</option></select></div>
+        <div class="col-md-4"><label class="form-label">Status</label><select id="task-status" class="form-select"><option value="todo">Belum Dikerjakan</option><option value="in-progress">Sedang Dikerjakan</option><option value="done">Selesai</option></select></div>
+        <div class="col-12"><label class="form-label">Catatan / Detail</label><textarea id="task-notes" class="form-control" rows="3" maxlength="3000" placeholder="Detail, konteks, atau keterangan tambahan..."></textarea></div>
+        <div class="col-12" id="task-subtasks-wrap"><label class="form-label">Subtask / Checklist <span class="text-secondary fw-normal">(satu item per baris)</span></label><textarea id="task-subtasks" class="form-control" rows="3" maxlength="3000" placeholder="Riset kebutuhan&#10;Siapkan bahan&#10;Review hasil"></textarea></div>
+        <div class="col-12 d-none" id="project-mode-hint"><div class="alert alert-info py-2 mb-0 small">Proyek disimpan pada tab Tugas yang sama. Progress proyek dihitung otomatis dari tugas yang ditautkan.</div></div>
+      </div></div>
+      <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button><button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk me-1"></i>Simpan Tugas</button></div>
+    </form>
+  </div></div>
+</div>
+
+<!-- Modal Fokus Hari Ini -->
+<div class="modal fade" id="focusModal" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content text-bg-dark">
+    <form onsubmit="saveDailyFocus(event)">
+      <div class="modal-header"><div><h5 class="modal-title">Fokus Hari Ini</h5><small class="text-secondary">Pilih satu hal yang paling penting untuk hari ini.</small></div><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <label class="form-label">Fokus utama</label>
+        <input type="text" id="daily-focus-input" class="form-control" maxlength="120" placeholder="Contoh: Selesaikan project utama">
+        <div class="form-text text-secondary">Fokus ini tersimpan di browser perangkat ini.</div>
+      </div>
+      <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button><button type="submit" class="btn btn-primary">Simpan Fokus</button></div>
+    </form>
+  </div></div>
+</div>
+
+<!-- Modal Rutinitas -->
+<div class="modal fade" id="routineModal" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content text-bg-dark">
+    <form onsubmit="saveRoutine(event)">
+      <input type="hidden" id="routine-id">
+      <div class="modal-header"><div><h5 class="modal-title">Rutinitas Baru</h5><small class="text-secondary">Buat kebiasaan yang ingin kamu lakukan secara konsisten.</small></div><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body"><div class="row g-3">
+        <div class="col-12"><label class="form-label">Nama Rutinitas <span class="text-danger">*</span></label><input type="text" id="routine-name" class="form-control" maxlength="100" placeholder="Contoh: Baca 20 menit" required></div>
+        <div class="col-md-6"><label class="form-label">Kategori</label><select id="routine-category" class="form-select"><option>Pribadi</option><option>Kesehatan</option><option>Belajar</option><option>Produktivitas</option><option>Keuangan</option><option>Rumah</option><option>Lainnya</option></select></div>
+        <div class="col-md-6"><label class="form-label">Jadwal</label><select id="routine-days" class="form-select"><option value="everyday">Setiap hari</option><option value="weekdays">Senin–Jumat</option><option value="weekend">Sabtu–Minggu</option></select></div>
+      </div></div>
+      <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button><button type="submit" class="btn btn-primary">Simpan Rutinitas</button></div>
+    </form>
+  </div></div>
+</div>
+
+<!-- Modal Target -->
+<div class="modal fade" id="goalModal" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content text-bg-dark">
+    <form onsubmit="saveGoal(event)">
+      <input type="hidden" id="goal-id">
+      <div class="modal-header"><div><h5 class="modal-title">Target Baru</h5><small class="text-secondary">Tentukan tujuan, angka yang ingin dicapai, dan progresnya.</small></div><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body"><div class="row g-3">
+        <div class="col-12"><label class="form-label">Nama Target <span class="text-danger">*</span></label><input type="text" id="goal-title" class="form-control" maxlength="120" placeholder="Contoh: Tabungan Rp10 juta" required></div>
+        <div class="col-md-4"><label class="form-label">Target</label><input type="number" id="goal-target" class="form-control" min="1" step="1" required></div>
+        <div class="col-md-4"><label class="form-label">Progress Saat Ini</label><input type="number" id="goal-current" class="form-control" min="0" step="1" value="0" required></div>
+        <div class="col-md-4"><label class="form-label">Deadline</label><input type="date" id="goal-due" class="form-control"></div>
+        <div class="col-12"><label class="form-label">Kategori</label><select id="goal-category" class="form-select"><option>Pribadi</option><option>Keuangan</option><option>Kesehatan</option><option>Belajar</option><option>Karier</option><option>Project</option><option>Lainnya</option></select></div>
+      </div></div>
+      <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button><button type="submit" class="btn btn-primary">Simpan Target</button></div>
+    </form>
+  </div></div>
+</div>
+
+<!-- Modal Daily Review -->
+<div class="modal fade" id="dailyReviewModal" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content text-bg-dark">
+    <div class="modal-header"><div><h5 class="modal-title">Daily Review 🌙</h5><small class="text-secondary">Satu menit untuk menutup hari.</small></div><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body"><div id="review-summary" class="p-3 rounded border border-secondary mb-3"></div><div class="mb-3"><label class="form-label">Apa yang berhasil hari ini?</label><textarea id="review-win" class="form-control" rows="3" placeholder="Tulis hal kecil maupun besar yang kamu syukuri..." ></textarea></div><div><label class="form-label">Apa yang ingin diperbaiki besok?</label><textarea id="review-improve" class="form-control" rows="3" placeholder="Satu hal yang bisa kamu lakukan lebih baik..." ></textarea></div></div>
+    <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button><button type="button" class="btn btn-primary" onclick="saveDailyReview()">Simpan Review</button></div>
+  </div></div>
+</div>
+
+
+<!-- Bootstrap 5 JS Bundle (Termasuk Popper.js untuk modal & tabs) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Logic Aplikasi Kita -->
+<script src="script.js"></script>
+
+</body>
+</html>

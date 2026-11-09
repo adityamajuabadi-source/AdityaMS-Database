@@ -1,0 +1,16 @@
+LIFE OS — ADVANCED FOUNDATION
+
+1. Redesign dark premium dan layout responsif.
+2. Workspace Kanban + Proyek.
+3. CRUD proyek dan relasi tugas ke proyek.
+4. Progress proyek otomatis.
+5. Filter, pencarian, prioritas, deadline, dan status tugas.
+6. Subtask/checklist sederhana.
+7. Kolom baru ditambahkan secara additive; data lama tidak ditimpa.
+
+PENTING:
+- Backup Google Sheet sebelum mengganti Apps Script.
+- Pertahankan Spreadsheet ID dan URL API modul yang lama.
+- Ganti isi Apps Script modul Tugas dengan 03-Tasks.gs, isi Spreadsheet ID yang sama, lalu Deploy > New Version.
+- Jangan mengganti Apps Script modul lainnya.
+- Uji satu proyek dan satu tugas sebelum penggunaan rutin.
